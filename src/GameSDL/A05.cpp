@@ -11,6 +11,7 @@ using namespace std;
 #define SCREEN_HEIGHT 600
 #define FPS 60
 
+float frameTime = 0;
 
 enum class GameState
 {
@@ -30,57 +31,57 @@ bool in_rect(int x, int y, struct SDL_Rect *r) {
 //
 //}
 
-void EventHandleMenu(SDL_Event event, GameState gameStatus, int posX, int posY, bool click) {
-	while (SDL_PollEvent(&event)) {
-		switch (event.type) {
-		case SDL_QUIT:		gameStatus = GameState::EXIT;  break;
-		case SDL_KEYDOWN:	if (event.key.keysym.sym == SDLK_ESCAPE) gameStatus = GameState::EXIT; break;
-		case SDL_MOUSEMOTION: posX = event.motion.x; posY = event.motion.y;	break;
-		case SDL_MOUSEBUTTONDOWN: if (event.button.button == SDL_BUTTON_LEFT) click = true;  break; //Pregunta si ha clickado con el boton izquierdo del mouse
-		default:;
+void EventHandleMenu(SDL_Event* event, GameState* gameStatus, int* posX, int* posY, bool* click) {
+	while (SDL_PollEvent(event)) {
+		switch (event->type) {
+		case SDL_QUIT:		*gameStatus = GameState::EXIT;  break;
+		case SDL_KEYDOWN:	if (event->key.keysym.sym == SDLK_ESCAPE) *gameStatus = GameState::EXIT; break;
+		case SDL_MOUSEMOTION: *posX = event->motion.x; *posY = event->motion.y;	break;
+		case SDL_MOUSEBUTTONDOWN: if (event->button.button == SDL_BUTTON_LEFT) *click = true;  break; //Pregunta si ha clickado con el boton izquierdo del mouse
+		default: break;
 		}
 	}
 
 }
 
-void UpdateMenu(float deltaTime, clock_t lastTime, float timeDown, bool click, int posX, int posY,
-	SDL_Rect playerRect, SDL_Rect textPlayMusicRect, SDL_Rect textStopMusicRect, SDL_Rect exitGameRect,
-	int frameWidth, int textWidth, Mix_Music *soundtrack, GameState gameStatus) {
+void UpdateMenu( bool* click, int* posX, int* posY,
+	SDL_Rect* playerRect, SDL_Rect textPlayMusicRect, SDL_Rect textStopMusicRect,SDL_Rect playGameRect, SDL_Rect exitGameRect,
+	int frameWidth, int textWidth, Mix_Music *soundtrack, GameState* gameStatus) {
+
+	
 	// UPDATE
-	float frameTime = 0;
 	frameTime++;
 	if (FPS / frameTime <= 9) {
 		frameTime = 0;
-		playerRect.x += frameWidth;
-		if (playerRect.x >= textWidth) {
-			playerRect.x = 0;
+		playerRect->x += frameWidth;
+		if (playerRect->x >= textWidth) {
+			playerRect->x = 0;
 		}
 	}
 
-	//TIME
-	deltaTime = (clock() - lastTime);
-	lastTime = clock();
-	deltaTime /= CLOCKS_PER_SEC;
-	timeDown -= deltaTime;
-	//cout << timeDown << endl;
 
 
 
 	//Mouse Click Event Update
-	if (click) {
+	if (*click) {
 		//Music Buttons
 
-		if (in_rect(posX, posY, &textPlayMusicRect)) { //Encima del boton Play Music
+		if (in_rect(*posX, *posY, &textPlayMusicRect)) { //Encima del boton Play Music
 			Mix_PlayMusic(soundtrack, -1);
 		}
-		if (in_rect(posX, posY, &textStopMusicRect)) { //Encima del boton Stop Music
+		if (in_rect(*posX, *posY, &textStopMusicRect)) { //Encima del boton Stop Music
 
 			Mix_HaltMusic();
 		}
 
-		if (in_rect(posX, posY, &exitGameRect)) {
-			gameStatus = GameState::EXIT;
+		if (in_rect(*posX, *posY, &playGameRect)) {
+			*gameStatus = GameState::PLAY;
 		}
+
+		if (in_rect(*posX, *posY, &exitGameRect)) {
+			*gameStatus = GameState::EXIT;
+		}
+
 
 	}
 }
@@ -88,8 +89,8 @@ void UpdateMenu(float deltaTime, clock_t lastTime, float timeDown, bool click, i
 void DrawMenu(SDL_Renderer *renderer, SDL_Texture *bgTexture, SDL_Texture *textTexture, SDL_Texture *playGameTexture, SDL_Texture *playGameTexture2,
 	SDL_Texture *exitGameTexture, SDL_Texture *exitGameTexture2, SDL_Texture *playMusicTexture, SDL_Texture *playMusicTexture2, SDL_Texture *stopMusicTexture,
 	SDL_Texture * stopMusicTexture2, SDL_Texture *playerTexture, SDL_Rect bgRect, SDL_Rect textRect, SDL_Rect playGameRect, SDL_Rect playGameRect2, SDL_Rect exitGameRect,
-	SDL_Rect exitGameRect2, SDL_Rect textPlayMusicRect, SDL_Rect textPlayMusicRect2, SDL_Rect textStopMusicRect, SDL_Rect textStopMusicRect2, SDL_Rect playerRect,
-	SDL_Rect playerPosition, int posX, int posY) {
+	SDL_Rect exitGameRect2, SDL_Rect textPlayMusicRect, SDL_Rect textPlayMusicRect2, SDL_Rect textStopMusicRect, SDL_Rect textStopMusicRect2, SDL_Rect* playerRect,
+	SDL_Rect* playerPosition, int* posX, int* posY) {
 
 	// DRAW
 	SDL_RenderClear(renderer);
@@ -98,9 +99,10 @@ void DrawMenu(SDL_Renderer *renderer, SDL_Texture *bgTexture, SDL_Texture *textT
 	SDL_RenderCopy(renderer, bgTexture, nullptr, &bgRect);
 	SDL_RenderCopy(renderer, textTexture, nullptr, &textRect);
 
+	
 
 	//If mouse over PlayGame Button
-	if (in_rect(posX, posY, &playGameRect)) {
+	if (in_rect(*posX, *posY, &playGameRect)) {
 		SDL_RenderCopy(renderer, playGameTexture2, nullptr, &playGameRect2);
 	}
 	else {
@@ -108,7 +110,7 @@ void DrawMenu(SDL_Renderer *renderer, SDL_Texture *bgTexture, SDL_Texture *textT
 	}
 
 	//If mouse over ExitGame Button
-	if (in_rect(posX, posY, &exitGameRect)) {
+	if (in_rect(*posX, *posY, &exitGameRect)) {
 		SDL_RenderCopy(renderer, exitGameTexture2, nullptr, &exitGameRect2);
 	}
 	else {
@@ -116,7 +118,7 @@ void DrawMenu(SDL_Renderer *renderer, SDL_Texture *bgTexture, SDL_Texture *textT
 	}
 
 	//If mouse over PlayMusic Button
-	if (in_rect(posX, posY, &textPlayMusicRect)) {
+	if (in_rect(*posX, *posY, &textPlayMusicRect)) {
 
 		SDL_RenderCopy(renderer, playMusicTexture2, nullptr, &textPlayMusicRect2);
 	}
@@ -126,7 +128,7 @@ void DrawMenu(SDL_Renderer *renderer, SDL_Texture *bgTexture, SDL_Texture *textT
 	}
 
 	//If mouse over StopMusic Button
-	if (in_rect(posX, posY, &textStopMusicRect)) {
+	if (in_rect(*posX, *posY, &textStopMusicRect)) {
 
 		SDL_RenderCopy(renderer, stopMusicTexture2, nullptr, &textStopMusicRect2);
 	}
@@ -142,17 +144,18 @@ void DrawMenu(SDL_Renderer *renderer, SDL_Texture *bgTexture, SDL_Texture *textT
 
 
 	//SDL_RenderCopy(renderer, playerTexture, nullptr, &playerRect);
-	SDL_RenderCopy(renderer, playerTexture, &playerRect, &playerPosition);
+	SDL_RenderCopy(renderer, playerTexture, playerRect, playerPosition);
 	SDL_RenderPresent(renderer);
 
 }
 
 
-void DestroyMenu(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *bgTexture, SDL_Texture *textTexture, SDL_Texture *playGameTexture, SDL_Texture *playGameTexture2, SDL_Texture *exitGameTexture, SDL_Texture *exitGameTexture2,
-	SDL_Texture *playMusicTexture, SDL_Texture *playMusicTexture2, SDL_Texture *stopMusicTexture, SDL_Texture *stopMusicTexture2) {
+void Destroy(SDL_Texture *bgTexture, SDL_Texture *textTexture, SDL_Texture *playGameTexture, SDL_Texture *playGameTexture2, SDL_Texture *exitGameTexture, SDL_Texture *exitGameTexture2,
+	SDL_Texture *playMusicTexture, SDL_Texture *playMusicTexture2, SDL_Texture *stopMusicTexture, SDL_Texture *stopMusicTexture2, SDL_Texture *bgPlayTexture) {
 
 	// --- DESTROY ---
 	SDL_DestroyTexture(bgTexture);
+	SDL_DestroyTexture(bgPlayTexture);
 	SDL_DestroyTexture(textTexture);
 
 	//Buttons
@@ -166,19 +169,48 @@ void DestroyMenu(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *bgText
 	SDL_DestroyTexture(stopMusicTexture2);
 
 	//SDL_DestroyTexture(playerTexture);	
-	SDL_DestroyRenderer(renderer);
-	SDL_DestroyWindow(window);
-
-	Mix_CloseAudio();
-
-	// --- QUIT ---
-	IMG_Quit();
-	TTF_Quit();
-	Mix_Quit();
-	SDL_Quit();
+	
+	
 	
 
 }
+
+void EventHandlePlay(SDL_Event* event, GameState* gameStatus, int* posX, int* posY, bool* click) {
+	while (SDL_PollEvent(event)) {
+		switch (event->type) {
+		case SDL_QUIT:		*gameStatus = GameState::EXIT;  break;
+		case SDL_KEYDOWN:	if (event->key.keysym.sym == SDLK_ESCAPE) *gameStatus = GameState::EXIT; break;
+		case SDL_MOUSEMOTION: *posX = event->motion.x; *posY = event->motion.y;	break;
+		case SDL_MOUSEBUTTONDOWN: if (event->button.button == SDL_BUTTON_LEFT) *click = true;  break; //Pregunta si ha clickado con el boton izquierdo del mouse
+		default: break;
+		}
+	}
+}
+
+void updatePlay(bool* click, int* posX, int* posY, GameState* gameStatus) {
+	frameTime++;
+	if (FPS / frameTime <= 9) {
+		/*frameTime = 0;
+		playerRect->x += frameWidth;
+		if (playerRect->x >= textWidth) {
+			playerRect->x = 0;
+		}*/
+	}
+	
+}
+
+void drawPlay(SDL_Renderer *renderer, SDL_Texture *bgPlayTexture, SDL_Rect bgPlayRect) {
+
+	// DRAW
+	SDL_RenderClear(renderer);
+
+	//BG + Titol
+	SDL_RenderCopy(renderer, bgPlayTexture, nullptr, &bgPlayRect);
+
+	SDL_RenderPresent(renderer);
+}
+
+
 
 int main(int, char*[]) {
 
@@ -205,10 +237,15 @@ int main(int, char*[]) {
 
 	// --- SPRITES --- (Textures)
 
-	//BG -- (Fons de pantalla)
+	//BG -- (Fons de pantalla) MENU
 	SDL_Texture *bgTexture{ IMG_LoadTexture(renderer,"../../res/img/bg.jpg") };
 	if (bgTexture == nullptr) throw "No s'han pogut crear les textures";
 	SDL_Rect bgRect{ 0,0, SCREEN_WIDTH, SCREEN_HEIGHT };
+
+	//BG -- (Fons de pantalla) PLAY
+	SDL_Texture *bgPlayTexture{ IMG_LoadTexture(renderer,"../../res/img/bgCastle.jpg") };
+	if (bgPlayTexture == nullptr) throw "No s'han pogut crear les textures";
+	SDL_Rect bgPlayRect{ 0,0, SCREEN_WIDTH, SCREEN_HEIGHT };
 
 	//	//Player
 
@@ -221,7 +258,7 @@ int main(int, char*[]) {
 	SDL_QueryTexture(playerTexture, NULL, NULL, &textWidth, &textHeight);
 	frameWidth = textWidth / 6;												//Depende del numero de subdivisiones del sprite (en este caso es de 6x1)
 	frameHeight = textHeight / 1;
-	playerPosition.x = playerPosition.y = 0;
+	playerPosition.x = 0; playerPosition.y = 100;
 	playerRect.x = playerRect.y = 0;
 	playerPosition.h = playerRect.h = frameHeight;
 	playerPosition.w = playerRect.w = frameWidth;
@@ -318,32 +355,50 @@ int main(int, char*[]) {
 
 	GameState gameStatus = GameState::MENU;
 	while (gameStatus != GameState::EXIT) {
-		while (SDL_PollEvent(&event)) {
-			switch (gameStatus)
-			{
-			case GameState::PLAY: break;
-			case GameState::EXIT: DestroyMenu(renderer, window, bgTexture, textTexture, playGameTexture, playGameTexture2, exitGameTexture, exitGameTexture2,
-											playMusicTexture, playMusicTexture2, stopMusicTexture, stopMusicTexture2); break;
-			case GameState::MENU: //InitMenu();
-				EventHandleMenu(event, gameStatus, posX, posY, click);
-				UpdateMenu(deltaTime, lastTime, timeDown, click, posX, posY, playerRect, textPlayMusicRect, textStopMusicRect, exitGameRect,
-					frameWidth, textWidth, soundtrack, gameStatus);
-				DrawMenu(renderer, bgTexture, textTexture, playGameTexture, playGameTexture2, exitGameTexture, exitGameTexture2, playMusicTexture,
-					playMusicTexture2, stopMusicTexture, stopMusicTexture2, playerTexture, bgRect, textRect, playGameRect, playGameRect2, exitGameRect,
-					exitGameRect2, textPlayMusicRect, textPlayMusicRect2, textStopMusicRect, textStopMusicRect2, playerRect, playerPosition, posX, posY); 
-			default:
-				break;
-			}
+
+		click = false;
+		//TIME
+		deltaTime = (clock() - lastTime);
+		lastTime = clock();
+		deltaTime /= CLOCKS_PER_SEC;
+		timeDown -= deltaTime;
+		//
+		switch (gameStatus)
+		{
+		case GameState::PLAY: EventHandlePlay(&event, &gameStatus, &posX, &posY, &click);
+							  updatePlay(&click, &posX, &posY, &gameStatus);
+							  drawPlay(renderer, bgPlayTexture, bgPlayRect);
+			
+		case GameState::EXIT: Destroy(bgTexture, textTexture, playGameTexture, playGameTexture2, exitGameTexture, exitGameTexture2,
+							  playMusicTexture, playMusicTexture2, stopMusicTexture, stopMusicTexture2, bgPlayTexture);
+							  //destroyPlay(bgPlayTexture);
+							  break;
+		case GameState::MENU: //InitMenu();
+			
+			
+							  EventHandleMenu(&event, &gameStatus, &posX, &posY, &click);
+								//if (click) cout << "clic" << endl;
+							  UpdateMenu(&click, &posX, &posY, &playerRect, textPlayMusicRect, textStopMusicRect, playGameRect, exitGameRect,
+									frameWidth, textWidth, soundtrack, &gameStatus);
+						      DrawMenu(renderer, bgTexture, textTexture, playGameTexture, playGameTexture2, exitGameTexture, exitGameTexture2, playMusicTexture,
+									playMusicTexture2, stopMusicTexture, stopMusicTexture2, playerTexture, bgRect, textRect, playGameRect, playGameRect2, exitGameRect,
+									exitGameRect2, textPlayMusicRect, textPlayMusicRect2, textStopMusicRect, textStopMusicRect2, &playerRect, &playerPosition, &posX, &posY); break;
+		default:
+			break;
 		}
 
-
-
-
-
-
 		
-		
-
 		
 	}
+	
+	SDL_DestroyRenderer(renderer);
+	SDL_DestroyWindow(window);
+
+	Mix_CloseAudio();
+
+	// --- QUIT ---
+	IMG_Quit();
+	TTF_Quit();
+	Mix_Quit();
+	SDL_Quit();
 }
