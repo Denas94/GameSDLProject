@@ -4,6 +4,7 @@
 #include <SDL_mixer.h>
 #include <iostream>
 #include <time.h>
+#include <vector>
 using namespace std;
 
 //Game general information
@@ -27,15 +28,19 @@ void destroyTexture(SDL_Texture *texture) {
 	SDL_DestroyTexture(texture);
 }
 
-void randomBagTexture(SDL_Renderer *renderer,SDL_Texture *texture, SDL_Rect *rect) {
+SDL_Rect *randomBag() {
 
-	rect->x = rand()%800+200;
-	rect->y = rand()%600+200;
-	rect->w = 75;
-	rect->h = 60;
 	
-	SDL_RenderCopy(renderer, texture, nullptr, rect);
+	SDL_Rect *randomBagRect = new SDL_Rect;
+	randomBagRect->x = rand()%800;
+	randomBagRect->y = rand()%400+200;
+	randomBagRect->w = 75;
+	randomBagRect->h = 60;
+	srand(time(NULL));
+
+	return randomBagRect;
 }
+
 
 void EventHandleMenu(SDL_Event* event, GameState* gameStatus, int* posX, int* posY, bool* click) {
 	while (SDL_PollEvent(event)) {
@@ -206,8 +211,11 @@ void updatePlay(SDL_Renderer *renderer, bool* click, int* posX, int* posY, GameS
 	}
 	if (*click) {
 		if (in_rect(*posX, *posY, goldBagPosition)) {
-			destroyTexture(goldBagTexture);
-			randomBagTexture(renderer, goldBagTexture, goldBagPosition);
+			//destroyTexture(goldBagTexture);
+			goldBagPosition = randomBag();
+			
+			//cout << "lmao" << endl;
+			//randomBagTexture(renderer, goldBagTexture, goldBagPosition);
 			//cout << goldBagPosition->x << endl;
 		}
 	}
@@ -225,7 +233,7 @@ void updatePlay(SDL_Renderer *renderer, bool* click, int* posX, int* posY, GameS
 }
 
 void drawPlay(SDL_Renderer *renderer, SDL_Texture *bgPlayTexture, SDL_Rect bgPlayRect, SDL_Texture *playerP1Texture, SDL_Rect *playerP1Rect, SDL_Rect playerP1Position,
-				SDL_Texture *goldBagTexture, SDL_Rect goldBagRect) {
+				SDL_Texture *goldBagTexture, SDL_Rect *goldBagRect) {
 
 	
 	// DRAW
@@ -238,13 +246,13 @@ void drawPlay(SDL_Renderer *renderer, SDL_Texture *bgPlayTexture, SDL_Rect bgPla
 	//SDL_RenderCopy(renderer, playerTexture, playerRect, playerPosition);
 	SDL_RenderCopy(renderer, playerP1Texture, playerP1Rect, &playerP1Position);
 	
+	//SDL_RenderCopy(renderer, goldBagTexture, nullptr, goldBagRect);
+	//cout << goldBagRect->x << endl;
 	for (int i = 0; i < 5; i++) {
-		randomBagTexture(renderer, goldBagTexture, &goldBagRect);
+		SDL_RenderCopy(renderer, goldBagTexture, nullptr, goldBagRect+i);
+		//cout << (goldBagRect+i)->x << endl; 
 	}
 	
-	
-	
-	SDL_RenderCopy(renderer, goldBagTexture, nullptr, &goldBagRect);
 
 
 	SDL_RenderPresent(renderer);
@@ -318,7 +326,15 @@ int main(int, char*[]) {
 	
 	//Bossa d'or
 	SDL_Texture *goldBagTexture{ IMG_LoadTexture(renderer, "../../res/img/gold.png") };
-	SDL_Rect goldBagPosition{ 300, 300, 75, 60 };
+	//SDL_Rect goldBagPosition{ 300, 300, 75, 60 };
+
+	
+	SDL_Rect *goldBagPositions[5];
+
+	for (int i = 0; i < 5; i++) {
+		goldBagPositions[i] = randomBag();
+	}
+	
 
 	// --- TEXT ---
 
@@ -422,8 +438,8 @@ int main(int, char*[]) {
 		switch (gameStatus)
 		{
 		case GameState::PLAY: EventHandlePlay(&event, &gameStatus, &posX, &posY, &click);
-							  updatePlay(renderer, &click, &posX, &posY, &gameStatus, &playerP1Rect, &goldBagPosition, goldBagTexture, frameP1Width, textP1Height);
-							  drawPlay(renderer, bgPlayTexture, bgPlayRect, playerP1Texture, &playerP1Rect, playerP1Position, goldBagTexture,goldBagPosition);
+							  updatePlay(renderer, &click, &posX, &posY, &gameStatus, &playerP1Rect, *goldBagPositions, goldBagTexture, frameP1Width, textP1Height);
+							  drawPlay(renderer, bgPlayTexture, bgPlayRect, playerP1Texture, &playerP1Rect, playerP1Position, goldBagTexture, *goldBagPositions);
 							 
 
 		case GameState::EXIT: Destroy(bgTexture, textTexture, playGameTexture, playGameTexture2, exitGameTexture, exitGameTexture2,
@@ -434,7 +450,7 @@ int main(int, char*[]) {
 			
 			
 							  EventHandleMenu(&event, &gameStatus, &posX, &posY, &click);
-								//if (click) cout << "clic" << endl;
+								
 							  UpdateMenu(&click, &posX, &posY, &playerRect, textPlayMusicRect, textStopMusicRect, playGameRect, exitGameRect,
 									frameWidth, textWidth, soundtrack, &gameStatus);
 						      DrawMenu(renderer, bgTexture, textTexture, playGameTexture, playGameTexture2, exitGameTexture, exitGameTexture2, playMusicTexture,
