@@ -23,13 +23,19 @@ bool in_rect(int x, int y, struct SDL_Rect *r) {
 		(x < r->x + r->w) && (y < r->y + r->h);
 }
 
-//void InitMenu() {
-//
-//	
-//
-//	
-//
-//}
+void destroyTexture(SDL_Texture *texture) {
+	SDL_DestroyTexture(texture);
+}
+
+void randomBagTexture(SDL_Renderer *renderer,SDL_Texture *texture, SDL_Rect *rect) {
+
+	rect->x = rand()%800+200;
+	rect->y = rand()%600+200;
+	rect->w = 75;
+	rect->h = 60;
+	
+	SDL_RenderCopy(renderer, texture, nullptr, rect);
+}
 
 void EventHandleMenu(SDL_Event* event, GameState* gameStatus, int* posX, int* posY, bool* click) {
 	while (SDL_PollEvent(event)) {
@@ -155,7 +161,7 @@ void Destroy(SDL_Texture *bgTexture, SDL_Texture *textTexture, SDL_Texture *play
 
 	// --- DESTROY ---
 	SDL_DestroyTexture(bgTexture);
-	SDL_DestroyTexture(bgPlayTexture);
+	//SDL_DestroyTexture(bgPlayTexture);
 	SDL_DestroyTexture(textTexture);
 
 	//Buttons
@@ -168,7 +174,7 @@ void Destroy(SDL_Texture *bgTexture, SDL_Texture *textTexture, SDL_Texture *play
 	SDL_DestroyTexture(stopMusicTexture);
 	SDL_DestroyTexture(stopMusicTexture2);
 
-	//SDL_DestroyTexture(playerTexture);	
+	
 	
 	
 	
@@ -187,25 +193,59 @@ void EventHandlePlay(SDL_Event* event, GameState* gameStatus, int* posX, int* po
 	}
 }
 
-void updatePlay(bool* click, int* posX, int* posY, GameState* gameStatus) {
+void updatePlay(SDL_Renderer *renderer, bool* click, int* posX, int* posY, GameState* gameStatus, SDL_Rect* playerP1Rect, SDL_Rect *goldBagPosition, SDL_Texture* goldBagTexture, int frameP1Width, int textP1Width) {
 	frameTime++;
+	srand(time(NULL));
+
 	if (FPS / frameTime <= 9) {
-		/*frameTime = 0;
+		frameTime = 0;
+		playerP1Rect->x += frameP1Width;
+		if (playerP1Rect->x >= textP1Width) {
+			playerP1Rect->x = 0;
+		}
+	}
+	if (*click) {
+		if (in_rect(*posX, *posY, goldBagPosition)) {
+			destroyTexture(goldBagTexture);
+			randomBagTexture(renderer, goldBagTexture, goldBagPosition);
+			//cout << goldBagPosition->x << endl;
+		}
+	}
+
+
+	
+	/*if (FPS / frameTime <= 9) {
+		frameTime = 0;
 		playerRect->x += frameWidth;
 		if (playerRect->x >= textWidth) {
 			playerRect->x = 0;
-		}*/
-	}
+		}
+	}*/
 	
 }
 
-void drawPlay(SDL_Renderer *renderer, SDL_Texture *bgPlayTexture, SDL_Rect bgPlayRect) {
+void drawPlay(SDL_Renderer *renderer, SDL_Texture *bgPlayTexture, SDL_Rect bgPlayRect, SDL_Texture *playerP1Texture, SDL_Rect *playerP1Rect, SDL_Rect playerP1Position,
+				SDL_Texture *goldBagTexture, SDL_Rect goldBagRect) {
 
+	
 	// DRAW
 	SDL_RenderClear(renderer);
 
 	//BG + Titol
 	SDL_RenderCopy(renderer, bgPlayTexture, nullptr, &bgPlayRect);
+
+	//P1 Character
+	//SDL_RenderCopy(renderer, playerTexture, playerRect, playerPosition);
+	SDL_RenderCopy(renderer, playerP1Texture, playerP1Rect, &playerP1Position);
+	
+	for (int i = 0; i < 5; i++) {
+		randomBagTexture(renderer, goldBagTexture, &goldBagRect);
+	}
+	
+	
+	
+	SDL_RenderCopy(renderer, goldBagTexture, nullptr, &goldBagRect);
+
 
 	SDL_RenderPresent(renderer);
 }
@@ -250,7 +290,7 @@ int main(int, char*[]) {
 	//	//Player
 
 
-	// --- Animated Sprite --- (DIJOUS)
+	// --- Animated Sprite --- (DIJOUS) - MENU
 
 	SDL_Texture *playerTexture{ IMG_LoadTexture(renderer,"../../res/img/sp01.png") };
 	SDL_Rect playerRect, playerPosition;
@@ -264,6 +304,21 @@ int main(int, char*[]) {
 	playerPosition.w = playerRect.w = frameWidth;
 	int frameTime = 0;
 
+	SDL_Texture *playerP1Texture{ IMG_LoadTexture(renderer, "../../res/img/spCastle.png") };
+	SDL_Rect playerP1Rect, playerP1Position;
+	int textP1Width, textP1Height, frameP1Width, frameP1Height;
+	textP1Width = textP1Height = frameP1Width = frameP1Height = 0;
+	SDL_QueryTexture(playerP1Texture, NULL, NULL, &textP1Width, &textP1Height);
+	frameP1Width = textP1Width / 12;
+	frameP1Height = frameP1Height / 1;
+	playerP1Position.x = playerP1Position.y = 0;
+	playerP1Rect.x = playerP1Rect.y = 0;
+	playerP1Position.h = playerP1Rect.h = frameP1Height;
+	playerP1Position.w = playerP1Rect.w = frameP1Width;
+	
+	//Bossa d'or
+	SDL_Texture *goldBagTexture{ IMG_LoadTexture(renderer, "../../res/img/gold.png") };
+	SDL_Rect goldBagPosition{ 300, 300, 75, 60 };
 
 	// --- TEXT ---
 
@@ -350,6 +405,7 @@ int main(int, char*[]) {
 	int posX = 0;
 	int posY = 0;
 	bool click = false;
+	bool first = true;
 	// --- GAME LOOP ---
 	SDL_Event event;
 
@@ -366,12 +422,13 @@ int main(int, char*[]) {
 		switch (gameStatus)
 		{
 		case GameState::PLAY: EventHandlePlay(&event, &gameStatus, &posX, &posY, &click);
-							  updatePlay(&click, &posX, &posY, &gameStatus);
-							  drawPlay(renderer, bgPlayTexture, bgPlayRect);
-			
+							  updatePlay(renderer, &click, &posX, &posY, &gameStatus, &playerP1Rect, &goldBagPosition, goldBagTexture, frameP1Width, textP1Height);
+							  drawPlay(renderer, bgPlayTexture, bgPlayRect, playerP1Texture, &playerP1Rect, playerP1Position, goldBagTexture,goldBagPosition);
+							 
+
 		case GameState::EXIT: Destroy(bgTexture, textTexture, playGameTexture, playGameTexture2, exitGameTexture, exitGameTexture2,
 							  playMusicTexture, playMusicTexture2, stopMusicTexture, stopMusicTexture2, bgPlayTexture);
-							  //destroyPlay(bgPlayTexture);
+							 
 							  break;
 		case GameState::MENU: //InitMenu();
 			
