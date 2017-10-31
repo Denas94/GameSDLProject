@@ -5,6 +5,7 @@
 #include <iostream>
 #include <time.h>
 #include <vector>
+#include "Collisions.h"
 using namespace std;
 
 //Game general information
@@ -28,18 +29,19 @@ void destroyTexture(SDL_Texture *texture) {
 	SDL_DestroyTexture(texture);
 }
 
-SDL_Rect *randomBag() {
-
-	
-	SDL_Rect *randomBagRect = new SDL_Rect;
-	randomBagRect->x = rand()%800;
-	randomBagRect->y = rand()%400+200;
-	randomBagRect->w = 75;
-	randomBagRect->h = 60;
-	srand(time(NULL));
-
-	return randomBagRect;
-}
+//vector<SDL_Rect> randomBag() {
+//
+//	
+//	vector<SDL_Rect> randomBagRect;
+//	randomBagRect
+//	randomBagRect.x = rand()%800;
+//	randomBagRect->y = rand()%400+200;
+//	randomBagRect->w = 75;
+//	randomBagRect->h = 60;
+//	
+//
+//	return randomBagRect;
+//}
 
 
 void EventHandleMenu(SDL_Event* event, GameState* gameStatus, int* posX, int* posY, bool* click) {
@@ -186,33 +188,35 @@ void Destroy(SDL_Texture *bgTexture, SDL_Texture *textTexture, SDL_Texture *play
 
 }
 
-void EventHandlePlay(SDL_Event* event, GameState* gameStatus, int* posX, int* posY, bool* click) {
+void EventHandlePlay(SDL_Event* event, GameState* gameStatus, int* posX, int* posY, bool* click, bool* a) {
 	while (SDL_PollEvent(event)) {
 		switch (event->type) {
 		case SDL_QUIT:		*gameStatus = GameState::EXIT;  break;
-		case SDL_KEYDOWN:	if (event->key.keysym.sym == SDLK_ESCAPE) *gameStatus = GameState::EXIT; break;
+		case SDL_KEYDOWN:	if (event->key.keysym.sym == SDLK_ESCAPE) *gameStatus = GameState::EXIT;
+							if (event->key.keysym.sym == SDLK_a) *a = true; break;
 		case SDL_MOUSEMOTION: *posX = event->motion.x; *posY = event->motion.y;	break;
 		case SDL_MOUSEBUTTONDOWN: if (event->button.button == SDL_BUTTON_LEFT) *click = true;  break; //Pregunta si ha clickado con el boton izquierdo del mouse
+		
 		default: break;
 		}
 	}
 }
 
-void updatePlay(SDL_Renderer *renderer, bool* click, int* posX, int* posY, GameState* gameStatus, SDL_Rect* playerP1Rect, SDL_Rect *goldBagPosition, SDL_Texture* goldBagTexture, int frameP1Width, int textP1Width) {
+void updatePlay(SDL_Renderer *renderer, bool* click, int* posX, int* posY, GameState* gameStatus, SDL_Rect* playerP1Rect, vector <SDL_Rect> goldBagPositions, SDL_Texture* goldBagTexture, int frameP1Width, int textP1Width) {
 	frameTime++;
-	srand(time(NULL));
+	
 
 	if (FPS / frameTime <= 9) {
 		frameTime = 0;
 		playerP1Rect->x += frameP1Width;
-		if (playerP1Rect->x >= textP1Width) {
+		if (playerP1Rect->x >= (frameP1Width*3)) {
 			playerP1Rect->x = 0;
 		}
 	}
 	if (*click) {
-		if (in_rect(*posX, *posY, goldBagPosition)) {
+		if (in_rect(*posX, *posY, &goldBagPositions[0])) {
 			//destroyTexture(goldBagTexture);
-			goldBagPosition = randomBag();
+			//goldBagPosition = randomBag();
 			
 			//cout << "lmao" << endl;
 			//randomBagTexture(renderer, goldBagTexture, goldBagPosition);
@@ -233,7 +237,7 @@ void updatePlay(SDL_Renderer *renderer, bool* click, int* posX, int* posY, GameS
 }
 
 void drawPlay(SDL_Renderer *renderer, SDL_Texture *bgPlayTexture, SDL_Rect bgPlayRect, SDL_Texture *playerP1Texture, SDL_Rect *playerP1Rect, SDL_Rect playerP1Position,
-				SDL_Texture *goldBagTexture, SDL_Rect *goldBagRect) {
+				SDL_Texture *goldBagTexture, vector <SDL_Rect> goldBagPositions, bool *a) {
 
 	
 	// DRAW
@@ -249,10 +253,14 @@ void drawPlay(SDL_Renderer *renderer, SDL_Texture *bgPlayTexture, SDL_Rect bgPla
 	//SDL_RenderCopy(renderer, goldBagTexture, nullptr, goldBagRect);
 	//cout << goldBagRect->x << endl;
 	for (int i = 0; i < 5; i++) {
-		SDL_RenderCopy(renderer, goldBagTexture, nullptr, goldBagRect+i);
+		SDL_RenderCopy(renderer, goldBagTexture, nullptr, &goldBagPositions[i]); //aquí està el problema
 		//cout << (goldBagRect+i)->x << endl; 
 	}
-	
+
+
+	if (*a) {
+		cout << "lmao" << endl;
+	}
 
 
 	SDL_RenderPresent(renderer);
@@ -318,22 +326,26 @@ int main(int, char*[]) {
 	textP1Width = textP1Height = frameP1Width = frameP1Height = 0;
 	SDL_QueryTexture(playerP1Texture, NULL, NULL, &textP1Width, &textP1Height);
 	frameP1Width = textP1Width / 12;
-	frameP1Height = frameP1Height / 1;
-	playerP1Position.x = playerP1Position.y = 0;
+	frameP1Height = textP1Height / 8;
+	playerP1Position.x = 300; playerP1Position.y = 300;
 	playerP1Rect.x = playerP1Rect.y = 0;
 	playerP1Position.h = playerP1Rect.h = frameP1Height;
 	playerP1Position.w = playerP1Rect.w = frameP1Width;
+	playerP1Position.h += 10;
+	playerP1Position.w += 10;
 	
 	//Bossa d'or
 	SDL_Texture *goldBagTexture{ IMG_LoadTexture(renderer, "../../res/img/gold.png") };
 	//SDL_Rect goldBagPosition{ 300, 300, 75, 60 };
 
 	
-	SDL_Rect *goldBagPositions[5];
+	
+	vector <SDL_Rect> goldBagPositions[5];
+	goldBagPositions->push_back(SDL_Rect());
 
-	for (int i = 0; i < 5; i++) {
+	/*for (int i = 0; i < 5; i++) {
 		goldBagPositions[i] = randomBag();
-	}
+	}*/
 	
 
 	// --- TEXT ---
@@ -421,7 +433,9 @@ int main(int, char*[]) {
 	int posX = 0;
 	int posY = 0;
 	bool click = false;
+	bool a = false;
 	bool first = true;
+	//srand(time(NULL));
 	// --- GAME LOOP ---
 	SDL_Event event;
 
@@ -429,6 +443,7 @@ int main(int, char*[]) {
 	while (gameStatus != GameState::EXIT) {
 
 		click = false;
+		a = false;
 		//TIME
 		deltaTime = (clock() - lastTime);
 		lastTime = clock();
@@ -437,9 +452,9 @@ int main(int, char*[]) {
 		//
 		switch (gameStatus)
 		{
-		case GameState::PLAY: EventHandlePlay(&event, &gameStatus, &posX, &posY, &click);
+		case GameState::PLAY: EventHandlePlay(&event, &gameStatus, &posX, &posY, &click, &a);
 							  updatePlay(renderer, &click, &posX, &posY, &gameStatus, &playerP1Rect, *goldBagPositions, goldBagTexture, frameP1Width, textP1Height);
-							  drawPlay(renderer, bgPlayTexture, bgPlayRect, playerP1Texture, &playerP1Rect, playerP1Position, goldBagTexture, *goldBagPositions);
+							  drawPlay(renderer, bgPlayTexture, bgPlayRect, playerP1Texture, &playerP1Rect, playerP1Position, goldBagTexture, *goldBagPositions, &a);
 							 
 
 		case GameState::EXIT: Destroy(bgTexture, textTexture, playGameTexture, playGameTexture2, exitGameTexture, exitGameTexture2,
