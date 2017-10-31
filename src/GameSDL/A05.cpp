@@ -188,12 +188,16 @@ void Destroy(SDL_Texture *bgTexture, SDL_Texture *textTexture, SDL_Texture *play
 
 }
 
-void EventHandlePlay(SDL_Event* event, GameState* gameStatus, int* posX, int* posY, bool* click, bool* a) {
+void EventHandlePlay(SDL_Event* event, GameState* gameStatus, int* posX, int* posY, bool* click, bool* a, bool *w, bool *s, bool *d) {
 	while (SDL_PollEvent(event)) {
 		switch (event->type) {
 		case SDL_QUIT:		*gameStatus = GameState::EXIT;  break;
 		case SDL_KEYDOWN:	if (event->key.keysym.sym == SDLK_ESCAPE) *gameStatus = GameState::EXIT;
-							if (event->key.keysym.sym == SDLK_a) *a = true; break;
+							if (event->key.keysym.sym == SDLK_a) *a = true;
+							if (event->key.keysym.sym == SDLK_w) *w = true;
+							if (event->key.keysym.sym == SDLK_s) *s = true;
+							if (event->key.keysym.sym == SDLK_d) *d = true;
+							break;
 		case SDL_MOUSEMOTION: *posX = event->motion.x; *posY = event->motion.y;	break;
 		case SDL_MOUSEBUTTONDOWN: if (event->button.button == SDL_BUTTON_LEFT) *click = true;  break; //Pregunta si ha clickado con el boton izquierdo del mouse
 		
@@ -202,7 +206,7 @@ void EventHandlePlay(SDL_Event* event, GameState* gameStatus, int* posX, int* po
 	}
 }
 
-void updatePlay(SDL_Renderer *renderer, bool* click, int* posX, int* posY, GameState* gameStatus, SDL_Rect* playerP1Rect, vector <SDL_Rect> goldBagPositions, SDL_Texture* goldBagTexture, int frameP1Width, int textP1Width) {
+void updatePlay(SDL_Renderer *renderer, bool* click, int* posX, int* posY, GameState* gameStatus, SDL_Rect* playerP1Rect,SDL_Rect* playerP1Position, vector <SDL_Rect> goldBagPositions, SDL_Texture* goldBagTexture, int frameP1Width, int frameP1Height, bool *a, bool *w, bool *s, bool *d) {
 	frameTime++;
 	
 
@@ -224,7 +228,29 @@ void updatePlay(SDL_Renderer *renderer, bool* click, int* posX, int* posY, GameS
 		}
 	}
 
+	if (*a) {
+		playerP1Rect->y = frameP1Height*2;
+		playerP1Position->x -= 10;
+		
+	}
 
+	if (*w) {
+		playerP1Rect->y = frameP1Height *4;
+		playerP1Position->y += 10;
+	}
+
+	if (*d) {
+		playerP1Rect->y = frameP1Height*3;
+		playerP1Position->x += 10;
+	}
+
+	if (*s) {
+		playerP1Rect->y = frameP1Height;
+		playerP1Position->y -= 10;
+		
+	}
+
+	
 	
 	/*if (FPS / frameTime <= 9) {
 		frameTime = 0;
@@ -253,15 +279,26 @@ void drawPlay(SDL_Renderer *renderer, SDL_Texture *bgPlayTexture, SDL_Rect bgPla
 	//SDL_RenderCopy(renderer, goldBagTexture, nullptr, goldBagRect);
 	//cout << goldBagRect->x << endl;
 	for (int i = 0; i < 5; i++) {
-		SDL_RenderCopy(renderer, goldBagTexture, nullptr, &goldBagPositions[i]); //aquí està el problema
+		//SDL_RenderCopy(renderer, goldBagTexture, nullptr, &goldBagPositions[i]); //aquí està el problema
 		//cout << (goldBagRect+i)->x << endl; 
 	}
 
 
 	if (*a) {
-		cout << "lmao" << endl;
+		cout << "a" << endl;
 	}
 
+	/*if (*w) {
+		cout << "w" << endl;
+	}
+
+	if (*s) {
+		cout << "s" << endl;
+	}
+
+	if (*d) {
+		cout << "d" << endl;
+	}*/
 
 	SDL_RenderPresent(renderer);
 }
@@ -341,7 +378,7 @@ int main(int, char*[]) {
 	
 	
 	vector <SDL_Rect> goldBagPositions[5];
-	goldBagPositions->push_back(SDL_Rect());
+	//goldBagPositions->push_back(SDL_Rect());
 
 	/*for (int i = 0; i < 5; i++) {
 		goldBagPositions[i] = randomBag();
@@ -434,6 +471,9 @@ int main(int, char*[]) {
 	int posY = 0;
 	bool click = false;
 	bool a = false;
+	bool w = false;
+	bool s = false;
+	bool d = false;
 	bool first = true;
 	//srand(time(NULL));
 	// --- GAME LOOP ---
@@ -444,6 +484,9 @@ int main(int, char*[]) {
 
 		click = false;
 		a = false;
+		w = false;
+		s = false;
+		d = false;
 		//TIME
 		deltaTime = (clock() - lastTime);
 		lastTime = clock();
@@ -452,8 +495,8 @@ int main(int, char*[]) {
 		//
 		switch (gameStatus)
 		{
-		case GameState::PLAY: EventHandlePlay(&event, &gameStatus, &posX, &posY, &click, &a);
-							  updatePlay(renderer, &click, &posX, &posY, &gameStatus, &playerP1Rect, *goldBagPositions, goldBagTexture, frameP1Width, textP1Height);
+		case GameState::PLAY: EventHandlePlay(&event, &gameStatus, &posX, &posY, &click, &a, &w, &s, &d);
+							  updatePlay(renderer, &click, &posX, &posY, &gameStatus, &playerP1Rect, &playerP1Position, *goldBagPositions, goldBagTexture, frameP1Width, frameP1Height, &a, &w, &s, &d);
 							  drawPlay(renderer, bgPlayTexture, bgPlayRect, playerP1Texture, &playerP1Rect, playerP1Position, goldBagTexture, *goldBagPositions, &a);
 							 
 
