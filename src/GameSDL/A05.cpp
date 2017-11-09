@@ -6,28 +6,12 @@
 #include <time.h>
 #include <vector>
 #include "Collisions.h"
+#include "Renderer.h"
+#include "Types.h"
 using namespace std;
 
-//Game general information
-#define SCREEN_WIDTH 800
-#define SCREEN_HEIGHT 600
-#define FPS 60
 
-float frameTime = 0;
 
-enum class GameState
-{
-	PLAY, EXIT, MENU
-};
-
-bool in_rect(int x, int y, struct SDL_Rect *r) {
-	return (x >= r->x) && (y >= r->y) &&
-		(x < r->x + r->w) && (y < r->y + r->h);
-}
-
-void destroyTexture(SDL_Texture *texture) {
-	SDL_DestroyTexture(texture);
-}
 
 //vector<SDL_Rect> randomBag() {
 //
@@ -236,7 +220,7 @@ void updatePlay(SDL_Renderer *renderer, bool* click, int* posX, int* posY, GameS
 
 	if (*w) {
 		playerP1Rect->y = frameP1Height *4;
-		playerP1Position->y += 10;
+		playerP1Position->y -= 10;
 	}
 
 	if (*d) {
@@ -246,7 +230,7 @@ void updatePlay(SDL_Renderer *renderer, bool* click, int* posX, int* posY, GameS
 
 	if (*s) {
 		playerP1Rect->y = frameP1Height;
-		playerP1Position->y -= 10;
+		playerP1Position->y += 10;
 		
 	}
 
@@ -307,6 +291,9 @@ void drawPlay(SDL_Renderer *renderer, SDL_Texture *bgPlayTexture, SDL_Rect bgPla
 
 int main(int, char*[]) {
 
+
+	//Renderer renderer;
+
 	// --- INIT ---
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0) throw "No es pot inicialitzar SDL subsystems";
 
@@ -333,7 +320,7 @@ int main(int, char*[]) {
 	//BG -- (Fons de pantalla) MENU
 	SDL_Texture *bgTexture{ IMG_LoadTexture(renderer,"../../res/img/bg.jpg") };
 	if (bgTexture == nullptr) throw "No s'han pogut crear les textures";
-	SDL_Rect bgRect{ 0,0, SCREEN_WIDTH, SCREEN_HEIGHT };
+	
 
 	//BG -- (Fons de pantalla) PLAY
 	SDL_Texture *bgPlayTexture{ IMG_LoadTexture(renderer,"../../res/img/bgCastle.jpg") };

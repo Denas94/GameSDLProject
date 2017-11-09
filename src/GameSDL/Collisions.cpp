@@ -1,7 +1,11 @@
 #include "Collisions.h"
 
-bool Collision(SDL_Rect origen, SDL_Rect target)
+bool Collision(SDL_Rect* origen, SDL_Rect* target)
 {
 
-	return false;
+	return !(target->x > (origen->x + origen->w) ||
+		(target->x + target->w) < origen->x ||
+		target->y > (origen->y + origen->h) ||
+		(target->y + target->h) < origen->y);
+	
 }
