@@ -5,6 +5,7 @@
 #include <SDL_image.h>
 #include <SDL_mixer.h>
 #include <vector>
+#include <time.h>
 #include "Scene.h"
 #include "Play.h"
 #include "Menu.h"
@@ -15,7 +16,11 @@
 #define SCREEN_HEIGHT 600
 #define FPS 60
 
+// --- TIME ---
 float frameTime = 0;
+clock_t lastTime = clock();
+float timeDown = 10;
+float deltaTime = 0;
 
 bool in_rect(int x, int y, struct SDL_Rect *r) {
 	return (x >= r->x) && (y >= r->y) &&

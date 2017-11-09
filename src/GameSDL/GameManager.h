@@ -2,10 +2,12 @@
 #include "Types.h"
 class GameManager
 {
-	GameState gameState;
-	Scene *currentScene;
+	GameState m_gameState;
+	Scene *m_currentScene;
+
 public:
-	GameManager(GameState gameState, Scene *currentScene);
+	GameManager();
 	~GameManager();
+	void Run();
 };
 

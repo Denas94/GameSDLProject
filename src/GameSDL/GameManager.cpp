@@ -2,9 +2,19 @@
 
 
 
-GameManager::GameManager(GameState m_gameState, Scene * m_currentScene){
+GameManager::GameManager(){
 
 	m_gameState = GameState::MENU;
+	m_currentScene = new Menu();
+}
+
+GameManager::~GameManager()
+{
+}
+
+void GameManager::Run()
+{
+	
 
 
 	while (m_gameState != GameState::EXITGAME) {
@@ -59,8 +69,5 @@ GameManager::GameManager(GameState m_gameState, Scene * m_currentScene){
 
 
 	}
-}
 
-GameManager::~GameManager()
-{
 }

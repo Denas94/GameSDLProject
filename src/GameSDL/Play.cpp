@@ -76,7 +76,11 @@ void Play::Update()
 {
 	frameTime++;
 
-
+	//TIME
+		deltaTime = (clock() - lastTime);
+		lastTime = clock();
+		deltaTime /= CLOCKS_PER_SEC;
+		timeDown -= deltaTime;
 
 
 	if (FPS / frameTime <= 9) {
